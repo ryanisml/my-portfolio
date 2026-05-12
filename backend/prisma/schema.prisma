@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id               Int                     @id @default(autoincrement())
+  slug             String                  @unique @db.VarChar(120)
+  name             String                  @db.VarChar(180)
+  summary          String                  @db.Text
+  coverImage       String?                 @map("cover_image") @db.VarChar(512)
+  liveUrl          String?                 @map("live_url") @db.VarChar(512)
+  repoUrl          String?                 @map("repo_url") @db.VarChar(512)
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+  images           ProjectImage[]
+  responsibilities ProjectResponsibility[]
+  impacts          ProjectImpact[]
+  technologies     ProjectTechnology[]
+
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  imageUrl  String  @map("image_url") @db.VarChar(512)
+  sortOrder Int     @default(0) @map("sort_order")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_images")
+}
+
+model ProjectResponsibility {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  item      String  @db.Text
+  sortOrder Int     @default(0) @map("sort_order")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_responsibilities")
+}
+
+model ProjectImpact {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  item      String  @db.Text
+  sortOrder Int     @default(0) @map("sort_order")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_impacts")
+}
+
+model ProjectTechnology {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  techName  String  @map("tech_name") @db.VarChar(120)
+  sortOrder Int     @default(0) @map("sort_order")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_technologies")
+}
+
+model Slide {
+  id                 Int     @id @default(autoincrement())
+  slideId            String  @unique @map("slide_id") @db.VarChar(50)
+  eyebrow            String  @db.VarChar(180)
+  title              String  @db.Text
+  description        String  @db.Text
+  accent             String  @db.VarChar(180)
+  sectionClassDark   String  @map("section_class_dark") @db.VarChar(120)
+  sectionClassLight  String  @map("section_class_light") @db.VarChar(120)
+  sortOrder          Int     @default(0) @map("sort_order")
+
+  @@map("slides")
+}
+
+model Skill {
+  id        Int     @id @default(autoincrement())
+  skillName String  @map("skill_name") @db.VarChar(120)
+  groupId   Int     @map("group_id")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  @@index([groupId])
+  @@map("skills")
+}
+
+model WorkExperience {
+  id              Int                           @id @default(autoincrement())
+  role            String                        @db.VarChar(180)
+  company         String                        @db.VarChar(180)
+  period          String                        @db.VarChar(120)
+  sortOrder       Int                           @default(0) @map("sort_order")
+  highlights      WorkExperienceHighlight[]
+
+  @@map("work_experiences")
+}
+
+model WorkExperienceHighlight {
+  id              Int                            @id @default(autoincrement())
+  experienceId    Int                            @map("experience_id")
+  title           String                         @db.Text
+  sortOrder       Int                            @default(0) @map("sort_order")
+  experience      WorkExperience                 @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  subHighlights   WorkExperienceSubHighlight[]
+
+  @@index([experienceId])
+  @@map("work_experience_highlights")
+}
+
+model WorkExperienceSubHighlight {
+  id          Int                       @id @default(autoincrement())
+  highlightId Int                       @map("highlight_id")
+  item        String                    @db.Text
+  sortOrder   Int                       @default(0) @map("sort_order")
+  highlight   WorkExperienceHighlight   @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+
+  @@index([highlightId])
+  @@map("work_experience_sub_highlights")
+}
+
+model SocialLink {
+  id    Int     @id @default(autoincrement())
+  label String  @db.VarChar(120)
+  href  String  @db.VarChar(512)
+  icon  String  @db.VarChar(120)
+
+  @@map("social_links")
+}
+
+model Contact {
+  id       Int     @id @default(autoincrement())
+  email    String  @db.VarChar(180)
+  phone    String  @db.VarChar(50)
+  address  String  @db.VarChar(255)
+  location String  @db.VarChar(180)
+  latitude Float?  @map("latitude")
+  longitude Float? @map("longitude")
+  message  String  @db.VarChar(255)
+
+  @@map("contacts")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(180)
+  email     String   @db.VarChar(180)
+  body      String   @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("messages")
+}
+
+model About {
+  id          Int                @id @default(autoincrement())
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  sections    AboutSection[]
+
+  @@map("abouts")
+}
+
+model AboutSection {
+  id        Int     @id @default(autoincrement())
+  aboutId   Int     @map("about_id")
+  title     String  @db.VarChar(180)
+  content   String? @db.Text
+  sortOrder Int     @default(0) @map("sort_order")
+  about     About   @relation(fields: [aboutId], references: [id], onDelete: Cascade)
+  items     AboutItem[]
+
+  @@index([aboutId])
+  @@map("about_sections")
+}
+
+model AboutItem {
+  id        Int          @id @default(autoincrement())
+  sectionId Int          @map("section_id")
+  item      String       @db.Text
+  sortOrder Int          @default(0) @map("sort_order")
+  section   AboutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId])
+  @@map("about_items")
+}
