@@ -296,10 +296,10 @@ async function resetAndSeed() {
 
   // Seed social links
   const socialLinks = [
-    { label: 'Instagram', href: 'https://instagram.com/your-name', icon: 'faInstagram' },
-    { label: 'LinkedIn', href: 'https://linkedin.com/in/your-name', icon: 'faLinkedin' },
-    { label: 'GitHub', href: 'https://github.com/your-name', icon: 'faGithub' },
-    { label: 'X', href: 'https://x.com/your-name', icon: 'faXTwitter' },
+    { label: 'Instagram', href: 'https://instagram.com/ryanisml', icon: 'faInstagram' },
+    { label: 'LinkedIn', href: 'https://linkedin.com/in/ryanisml', icon: 'faLinkedin' },
+    { label: 'GitHub', href: 'https://github.com/ryanisml', icon: 'faGithub' },
+    { label: 'X', href: 'https://x.com/ryanisml', icon: 'faXTwitter' },
     { label: 'Google', href: 'https://www.google.com/search?q=your+name+portfolio', icon: 'faGoogle' },
     { label: 'Facebook', href: 'https://facebook.com/your-name', icon: 'faFacebook' },
     { label: 'YouTube', href: 'https://youtube.com/@your-name', icon: 'faYoutube' },

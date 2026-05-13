@@ -49,6 +49,7 @@ npm run dev
 **Frontend** (new terminal):
 ```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
@@ -104,11 +105,11 @@ To enable reCAPTCHA protection:
 1. Get keys from [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin)
 2. Add to `backend/.env`:
    ```env
-   RECAPTCHA_SECRET_KEY=your_secret_key
+   RECAPTCHA_SECRET_KEY="your_recaptcha_secret_key_here"
    ```
 3. Add to `frontend/.env`:
    ```env
-   VITE_RECAPTCHA_SITE_KEY=your_site_key
+   VITE_RECAPTCHA_SITE_KEY="your_recaptcha_site_key_here"
    ```
 
 Without these keys, a warning will display but the app will still function.
@@ -232,17 +233,18 @@ portfolio/
 
 **Frontend (.env):**
 ```
-VITE_API_BASE_URL=http://localhost:4000
-VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+VITE_API_BASE_URL="http://localhost:4000"
+VITE_RECAPTCHA_SITE_KEY="your_recaptcha_site_key_here"
+VITE_ALLOWED_HOSTS="localhost"
 ```
 
 **Backend (.env):**
 ```
 PORT=4000
-DATABASE_URL=postgresql://portfolio_user:portfolio_pass@localhost:5432/portfolio_db
-CORS_ORIGIN=http://localhost:5173
-ADMIN_PASSWORD=your_secure_password
-RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
+DATABASE_URL="postgresql://root:password@localhost:5432/portfolio_db"
+CORS_ORIGIN="http://localhost:5173"
+RECAPTCHA_SECRET_KEY="your_recaptcha_secret_key_here"
+ADMIN_PASSWORD=admin123
 ```
 
 ## Development
