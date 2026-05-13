@@ -4,6 +4,7 @@ services:
       context: ./backend
     container_name: portfolio-backend
     restart: unless-stopped
+    mem_limit: 512m
     env_file:
       - ./backend/.env
     environment:
@@ -17,6 +18,7 @@ services:
       context: ./frontend
     container_name: portfolio-frontend
     restart: unless-stopped
+    mem_limit: 384m
     env_file:
       - ./frontend/.env
     environment:
