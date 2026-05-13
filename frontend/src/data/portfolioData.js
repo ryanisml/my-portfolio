@@ -50,6 +50,16 @@ export const slides = [
     sectionClassLight: 'bg-emerald-100',
   },
   {
+    id: 'credentials',
+    eyebrow: 'Certification & Organization',
+    title: 'I stay active through certifications and community involvement.',
+    description:
+      'This section highlights the certifications I pursue and the organizations where I contribute and keep growing.',
+    accent: 'Credentials and community',
+    sectionClassDark: 'bg-teal-950',
+    sectionClassLight: 'bg-teal-100',
+  },
+  {
     id: 'contact',
     eyebrow: 'Contact',
     title: 'I love to connect and collaborate, so let’s get in touch!',

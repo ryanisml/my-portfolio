@@ -84,7 +84,7 @@ Access the admin panel at `/admin`.
 
 - **Projects** - Create/edit/delete with images, technologies, responsibilities, impacts
 - **Slides** - Manage presentation content
-- **Skills** - Organize by groups
+- **Skills** - Organize by cards with dynamic card names (max 10 cards)
 - **Experiences** - Work history with nested highlights
 - **Social Links** - Social media profiles
 - **Contact Info** - Contact details (email, phone, address, etc.)
@@ -120,7 +120,7 @@ Without these keys, a warning will display but the app will still function.
 - `GET /api/projects` - All projects
 - `GET /api/projects/:slug` - Project details
 - `GET /api/slides` - Slides
-- `GET /api/skills` - Skills by group
+- `GET /api/skills` - Skills by card (returns `groupId`, `cardName`, `skills[]`)
 - `GET /api/experiences` - Work experiences
 - `GET /api/social-links` - Social links
 - `GET /api/about` - About sections
@@ -142,12 +142,44 @@ Authorization: Bearer <ADMIN_PASSWORD>
 - `PATCH /api/messages/:id/read` - Mark message as read
 - `DELETE /api/messages/:id` - Delete message
 
+**Content Management:**
+- `GET /api/projects/admin/all`
+- `POST /api/projects`
+- `PUT /api/projects/:slug`
+- `DELETE /api/projects/:slug`
+- `POST /api/slides`
+- `PUT /api/slides/:id`
+- `DELETE /api/slides/:id`
+- `GET /api/skills/admin/all`
+- `POST /api/skills`
+- `PUT /api/skills/:id`
+- `DELETE /api/skills/:id`
+- `PUT /api/skills/admin/groups/:groupId` - Rename skill group/card name
+- `DELETE /api/skills/admin/groups/:groupId` - Delete skill group and all skills in it
+- `GET /api/experiences/admin/all`
+- `POST /api/experiences`
+- `PUT /api/experiences/:id`
+- `DELETE /api/experiences/:id`
+- `GET /api/credentials/admin/all`
+- `POST /api/credentials`
+- `PUT /api/credentials/:id`
+- `DELETE /api/credentials/:id`
+- `POST /api/social-links`
+- `PUT /api/social-links/:id`
+- `DELETE /api/social-links/:id`
+- `GET /api/about/admin/all`
+- `POST /api/about`
+- `PUT /api/about/:id`
+- `DELETE /api/about/:id`
+- `PUT /api/contact`
+
 ## Database
 
 ### Models
 - **Project** - Portfolio projects with full metadata
 - **Slide** - Presentation content
-- **Skill** - Skills grouped by category  
+- **Skill** - Skills grouped by category with optional dynamic `groupName` for card titles
+- **Credential** - Credential items (`certification` and `organization`)
 - **WorkExperience** - Career history with highlights
 - **SocialLink** - Social profiles
 - **Contact** - Contact information (email, phone, address, location, coordinates)
@@ -171,6 +203,15 @@ npm run prisma:seed
 # Generate Prisma client
 npx prisma generate
 ```
+
+### Skills Card Notes
+
+- Skill cards are dynamic and seeded with card names from `backend/prisma/seed.js`.
+- The API caps skill cards to 10 (`MAX_SKILL_CARDS = 10`).
+- Admin create/update enforces the same max 10 distinct skill groups.
+- Admin can rename a group from the Skills section (uses `PUT /api/skills/admin/groups/:groupId`).
+- Admin can delete a group and clear all skills in it (uses `DELETE /api/skills/admin/groups/:groupId`).
+- If you pull schema updates, run `npx prisma db push` and then `npm run prisma:seed` to populate card names.
 
 ## Project Images
 

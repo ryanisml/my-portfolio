@@ -5,9 +5,10 @@ import { faArrowLeft, faArrowRight, faArrowUp, faMoon, faSun } from '@fortawesom
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import heroImg from './assets/hero.png'
 import { slides as staticSlides } from './data/portfolioData'
-import { getAbout, getProjectCards, getSkillGroups, getSlides, getWorkExperiences, getSocialLinks } from './lib/api'
+import { getAbout, getCredentials, getProjectCards, getSkillGroups, getSlides, getWorkExperiences, getSocialLinks } from './lib/api'
 import AboutSlide from './slides/AboutSlide'
 import ContactSlide from './slides/ContactSlide'
+import CertificationOrganizationSlide from './slides/CertificationOrganizationSlide'
 import IntroSlide from './slides/IntroSlide'
 import ProjectsSlide from './slides/ProjectsSlide'
 import SkillsSlide from './slides/SkillsSlide'
@@ -27,12 +28,14 @@ function App() {
   const [projectCards, setProjectCards] = useState([])
   const [skillGroups, setSkillGroups] = useState([])
   const [workExperiences, setWorkExperiences] = useState([])
+  const [credentials, setCredentials] = useState({ certifications: [], organizations: [] })
   const [socialLinks, setSocialLinks] = useState([])
   const [loadStates, setLoadStates] = useState({
     about: 'loading',
     projects: 'loading',
     skills: 'loading',
     experiences: 'loading',
+    credentials: 'loading',
     social: 'loading',
   })
   const [isContentHovered, setIsContentHovered] = useState(false)
@@ -48,6 +51,18 @@ function App() {
     ...slide,
     sectionClass: theme === 'light' ? slide.sectionClassLight : slide.sectionClassDark,
   }))
+
+  const getSlideById = (id, fallbackIndex) => {
+    return themedSlides.find((slide) => slide.id === id) || themedSlides[fallbackIndex]
+  }
+
+  const introSlide = getSlideById('intro', 0)
+  const aboutSlide = getSlideById('about', 1)
+  const experienceSlide = getSlideById('experience', 2)
+  const projectsSlide = getSlideById('projects', 3)
+  const skillsSlide = getSlideById('skills', 4)
+  const credentialsSlide = getSlideById('credentials', 5)
+  const contactSlide = getSlideById('contact', 6)
 
   useEffect(() => {
     window.localStorage.setItem('portfolio-theme', theme)
@@ -66,9 +81,10 @@ function App() {
       getProjectCards(),
       getSkillGroups(),
       getWorkExperiences(),
+      getCredentials(),
       getSocialLinks(),
     ])
-      .then(([slidesResult, aboutResult, projectsResult, skillsResult, experiencesResult, linksResult]) => {
+      .then(([slidesResult, aboutResult, projectsResult, skillsResult, experiencesResult, credentialsResult, linksResult]) => {
         if (!isMounted) return
 
         const nextLoadStates = {
@@ -76,6 +92,7 @@ function App() {
           projects: projectsResult.status === 'fulfilled' ? 'ready' : 'error',
           skills: skillsResult.status === 'fulfilled' ? 'ready' : 'error',
           experiences: experiencesResult.status === 'fulfilled' ? 'ready' : 'error',
+          credentials: credentialsResult.status === 'fulfilled' ? 'ready' : 'error',
           social: linksResult.status === 'fulfilled' ? 'ready' : 'error',
         }
 
@@ -117,6 +134,19 @@ function App() {
           setWorkExperiences([])
         }
 
+        if (credentialsResult.status === 'fulfilled' && credentialsResult.value) {
+          setCredentials({
+            certifications: Array.isArray(credentialsResult.value.certifications)
+              ? credentialsResult.value.certifications
+              : [],
+            organizations: Array.isArray(credentialsResult.value.organizations)
+              ? credentialsResult.value.organizations
+              : [],
+          })
+        } else {
+          setCredentials({ certifications: [], organizations: [] })
+        }
+
         if (linksResult.status === 'fulfilled' && Array.isArray(linksResult.value)) {
           setSocialLinks(linksResult.value)
         } else {
@@ -132,6 +162,7 @@ function App() {
           projects: 'error',
           skills: 'error',
           experiences: 'error',
+          credentials: 'error',
           social: 'error',
         })
       })
@@ -354,7 +385,7 @@ function App() {
         onMouseLeave={handleContentLeave}
       >
         <IntroSlide
-          slide={themedSlides[0]}
+          slide={introSlide}
           setRef={(node) => {
             sectionRefs.current.intro = node
           }}
@@ -366,7 +397,7 @@ function App() {
         />
 
         <AboutSlide
-          slide={themedSlides[1]}
+          slide={aboutSlide}
           aboutSections={aboutSections}
           isLoading={loadStates.about === 'loading'}
           hasError={loadStates.about === 'error'}
@@ -376,7 +407,7 @@ function App() {
         />
 
         <WorkingExperienceSlide
-          slide={themedSlides[2]}
+          slide={experienceSlide}
           setRef={(node) => {
             sectionRefs.current.experience = node
           }}
@@ -386,7 +417,7 @@ function App() {
         />
 
         <ProjectsSlide
-          slide={themedSlides[3]}
+          slide={projectsSlide}
           setRef={(node) => {
             sectionRefs.current.projects = node
           }}
@@ -396,7 +427,7 @@ function App() {
         />
 
         <SkillsSlide
-          slide={themedSlides[4]}
+          slide={skillsSlide}
           setRef={(node) => {
             sectionRefs.current.skills = node
           }}
@@ -405,8 +436,21 @@ function App() {
           hasError={loadStates.skills === 'error'}
         />
 
+        {credentialsSlide && (
+          <CertificationOrganizationSlide
+            slide={credentialsSlide}
+            setRef={(node) => {
+              sectionRefs.current.credentials = node
+            }}
+            certifications={credentials.certifications}
+            organizations={credentials.organizations}
+            isLoading={loadStates.credentials === 'loading'}
+            hasError={loadStates.credentials === 'error'}
+          />
+        )}
+
         <ContactSlide
-          slide={themedSlides[5]}
+          slide={contactSlide}
           setRef={(node) => {
             sectionRefs.current.contact = node
           }}

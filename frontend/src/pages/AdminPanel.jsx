@@ -37,6 +37,10 @@ const TAB_CONFIG = {
     label: 'Experiences',
     description: 'Work experience records and timeline content.',
   },
+  credentials: {
+    label: 'Credentials',
+    description: 'Certification and organization entries for the credentials slide.',
+  },
   social: {
     label: 'Social Links',
     description: 'Footer social links and icon mapping names.',
@@ -56,6 +60,7 @@ const TAB_CRUD_CONFIG = {
   slides: { path: '/api/slides', idKey: 'id' },
   skills: { path: '/api/skills', idKey: 'id' },
   experiences: { path: '/api/experiences', idKey: 'id' },
+  credentials: { path: '/api/credentials', idKey: 'id' },
   social: { path: '/api/social-links', idKey: 'id' },
   contact: { path: '/api/contact' },
   messages: { path: '/api/messages', idKey: 'id' },
@@ -115,6 +120,7 @@ export default function AdminPanel() {
   const [slides, setSlides] = useState([])
   const [skills, setSkills] = useState([])
   const [experiences, setExperiences] = useState([])
+  const [credentials, setCredentials] = useState([])
   const [socialLinks, setSocialLinks] = useState([])
   const [contact, setContact] = useState({})
   const [messages, setMessages] = useState([])
@@ -123,6 +129,9 @@ export default function AdminPanel() {
   const [editingItem, setEditingItem] = useState(null)
   const [formData, setFormData] = useState({})
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [isGroupRenameModalOpen, setIsGroupRenameModalOpen] = useState(false)
+  const [groupRenameValue, setGroupRenameValue] = useState('')
+  const [groupBeingRenamed, setGroupBeingRenamed] = useState(null)
 
   const API_URL = getApiBaseUrl()
   const RECAPTCHA_SITE_KEY = getRecaptchaSiteKey()
@@ -155,6 +164,7 @@ export default function AdminPanel() {
     if (activeTab === 'slides') return slides
     if (activeTab === 'skills') return skills
     if (activeTab === 'experiences') return experiences
+    if (activeTab === 'credentials') return credentials
     if (activeTab === 'social') return socialLinks
     if (activeTab === 'contact') return [contact]
     if (activeTab === 'messages') return messages
@@ -169,6 +179,7 @@ export default function AdminPanel() {
       || editingItem.skillName
       || editingItem.label
       || editingItem.role
+      || editingItem.category
       || editingItem.slideId
       || 'Selected item'
     )
@@ -190,6 +201,12 @@ export default function AdminPanel() {
     setEditingItem(null)
     setFormData(activeTab === 'contact' ? contact : {})
     setIsEditorOpen(false)
+  }
+
+  const closeGroupRenameModal = () => {
+    setIsGroupRenameModalOpen(false)
+    setGroupRenameValue('')
+    setGroupBeingRenamed(null)
   }
 
   // Check database connectivity
@@ -369,11 +386,12 @@ export default function AdminPanel() {
   const loadAllData = async (authPassword = password) => {
     setLoading(true)
     try {
-      const [projRes, slidesRes, skillsRes, expRes, socialRes, contactRes, messagesRes] = await Promise.all([
+      const [projRes, slidesRes, skillsRes, expRes, credentialsRes, socialRes, contactRes, messagesRes] = await Promise.all([
         fetch(`${API_URL}/api/projects/admin/all`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/slides`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/skills/admin/all`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/experiences/admin/all`, { headers: getAuthHeaders(authPassword) }),
+        fetch(`${API_URL}/api/credentials/admin/all`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/social-links`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/contact`, { headers: getAuthHeaders(authPassword) }),
         fetch(`${API_URL}/api/messages/admin/all`, { headers: getAuthHeaders(authPassword) }),
@@ -383,6 +401,7 @@ export default function AdminPanel() {
       if (slidesRes.ok) setSlides(await slidesRes.json())
       if (skillsRes.ok) setSkills(await skillsRes.json())
       if (expRes.ok) setExperiences(await expRes.json())
+      if (credentialsRes.ok) setCredentials(await credentialsRes.json())
       if (socialRes.ok) setSocialLinks(await socialRes.json())
       if (contactRes.ok) setContact(await contactRes.json())
       if (messagesRes.ok) setMessages(await messagesRes.json())
@@ -464,9 +483,34 @@ export default function AdminPanel() {
         }
       }
 
+      if (activeTab === 'credentials') {
+        if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+          payload.sortOrder = Number(payload.sortOrder)
+        }
+        payload.category = String(payload.category || 'certification').toLowerCase() === 'organization'
+          ? 'organization'
+          : 'certification'
+        payload.title = String(payload.title || '').trim()
+
+        if (!payload.title) {
+          showNotification('Title is required.', 'error')
+          setLoading(false)
+          return
+        }
+      }
+
       if (activeTab === 'skills') {
+        payload.groupName = String(payload.groupName || '').trim()
+        if (!payload.groupName) {
+          showNotification('Card name (group name) is required.', 'error')
+          setLoading(false)
+          return
+        }
+
         if (payload.groupId !== undefined && payload.groupId !== null && payload.groupId !== '') {
           payload.groupId = Number(payload.groupId)
+        } else {
+          delete payload.groupId
         }
       }
 
@@ -615,6 +659,89 @@ export default function AdminPanel() {
     }
   }
 
+  const handleRenameSkillGroup = async (group) => {
+    const currentName = String(group?.name || '').trim()
+    if (!group || !currentName) {
+      showNotification('Invalid skill group selected.', 'error')
+      return
+    }
+
+    setGroupBeingRenamed(group)
+    setGroupRenameValue(currentName)
+    setIsGroupRenameModalOpen(true)
+  }
+
+  const handleRenameSkillGroupSubmit = async (e) => {
+    e.preventDefault()
+
+    const currentName = String(groupBeingRenamed?.name || '').trim()
+    const nextName = String(groupRenameValue || '').trim()
+
+    if (!groupBeingRenamed?.groupId) {
+      showNotification('Invalid skill group selected.', 'error')
+      return
+    }
+
+    if (!nextName) {
+      showNotification('Group name is required.', 'error')
+      return
+    }
+
+    if (nextName.toLowerCase() === currentName.toLowerCase()) {
+      closeGroupRenameModal()
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/skills/admin/groups/${groupBeingRenamed.groupId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ groupName: nextName }),
+      })
+
+      if (response.ok) {
+        showNotification('Skill group renamed successfully.', 'success')
+        closeGroupRenameModal()
+        await loadAllData()
+      } else {
+        const error = await response.json().catch(() => ({}))
+        showNotification(`Error: ${error.message || 'Unable to rename skill group.'}`, 'error')
+      }
+    } catch (error) {
+      console.error('Error renaming skill group:', error)
+      showNotification('Error renaming skill group.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteSkillGroup = async (group) => {
+    const confirmDelete = confirm(`Delete group "${group.name}" and clear all skills inside it? This action cannot be undone.`)
+    if (!confirmDelete) return
+
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/skills/admin/groups/${group.groupId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      if (response.ok) {
+        showNotification('Skill group deleted and all group skills cleared.', 'success')
+        await loadAllData()
+      } else {
+        const error = await response.json().catch(() => ({}))
+        showNotification(`Error: ${error.message || 'Unable to delete skill group.'}`, 'error')
+      }
+    } catch (error) {
+      console.error('Error deleting skill group:', error)
+      showNotification('Error deleting skill group.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Mark message as read
   const handleMarkRead = async (item) => {
     try {
@@ -746,13 +873,14 @@ export default function AdminPanel() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+        <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4">
           {Object.keys(TAB_CONFIG).map((tab) => (
             <button
               key={tab}
               onClick={() => {
                 setActiveTab(tab)
                 setIsEditorOpen(false)
+                closeGroupRenameModal()
                 setEditingItem(null)
                 setFormData(tab === 'contact' ? contact : {})
               }}
@@ -792,6 +920,14 @@ export default function AdminPanel() {
             )}
           </div>
 
+          {activeTab === 'skills' && (
+            <SkillsGroupTable
+              skills={skills}
+              onRenameGroup={handleRenameSkillGroup}
+              onDeleteGroup={handleDeleteSkillGroup}
+            />
+          )}
+
           <AdminList
             activeTab={activeTab}
             items={getActiveItems()}
@@ -818,19 +954,29 @@ export default function AdminPanel() {
             activeTab={activeTab}
             formData={formData}
             setFormData={setFormData}
+            skills={skills}
             editingItem={editingItem}
             onSave={handleSave}
             onCancel={closeEditor}
             loading={loading}
           />
         </AdminEditorModal>
+
+        <SkillGroupRenameModal
+          isOpen={isGroupRenameModalOpen}
+          loading={loading}
+          value={groupRenameValue}
+          onChange={setGroupRenameValue}
+          onClose={closeGroupRenameModal}
+          onSubmit={handleRenameSkillGroupSubmit}
+        />
       </div>
     </div>
   )
 }
 
 // Form Component
-function AdminForm({ activeTab, formData, setFormData, editingItem, onSave, onCancel, loading }) {
+function AdminForm({ activeTab, formData, setFormData, skills, editingItem, onSave, onCancel, loading }) {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -1166,6 +1312,19 @@ function AdminForm({ activeTab, formData, setFormData, editingItem, onSave, onCa
   }
 
   if (activeTab === 'skills') {
+    const NEW_GROUP_OPTION = '__new_group__'
+    const existingGroupNames = Array.from(
+      new Set(
+        (skills || [])
+          .map((skill) => String(skill.groupName || '').trim())
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b))
+
+    const normalizedGroupName = String(formData.groupName || '').trim()
+    const isExistingGroupName = existingGroupNames.includes(normalizedGroupName)
+    const selectedGroupValue = isExistingGroupName ? normalizedGroupName : NEW_GROUP_OPTION
+
     return (
       <form onSubmit={onSave} className="space-y-4 text-sm">
         {requiredHint}
@@ -1179,17 +1338,43 @@ function AdminForm({ activeTab, formData, setFormData, editingItem, onSave, onCa
           className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
         />
         <select
-          name="groupId"
-          value={formData.groupId !== undefined ? String(formData.groupId) : ''}
-          onChange={handleChange}
-          required
+          name="skillGroupSelector"
+          value={selectedGroupValue}
+          onChange={(e) => {
+            const selectedValue = e.target.value
+            if (selectedValue === NEW_GROUP_OPTION) {
+              setFormData((prev) => ({
+                ...prev,
+                groupName: isExistingGroupName ? '' : String(prev.groupName || ''),
+              }))
+              return
+            }
+
+            setFormData((prev) => ({
+              ...prev,
+              groupName: selectedValue,
+            }))
+          }}
           className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
         >
-          <option value="" disabled>Select Skill Group</option>
-          <option value="0">Group 0</option>
-          <option value="1">Group 1</option>
-          <option value="2">Group 2</option>
+          {existingGroupNames.length === 0 && <option value={NEW_GROUP_OPTION}>No group yet, add a new one</option>}
+          {existingGroupNames.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+          <option value={NEW_GROUP_OPTION}>+ Add new group</option>
         </select>
+        {selectedGroupValue === NEW_GROUP_OPTION && (
+          <input
+            type="text"
+            name="groupName"
+            placeholder="New Card Name / Group Name *"
+            value={formData.groupName || ''}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
+          />
+        )}
+        <p className="text-xs text-gray-400">Choose an existing group from the dropdown, or add a new one (max 10 groups).</p>
         <input
           type="number"
           name="sortOrder"
@@ -1287,6 +1472,63 @@ function AdminForm({ activeTab, formData, setFormData, editingItem, onSave, onCa
             Use one block per highlight. First line is the title, following lines are sub-points. Separate blocks with an empty line.
           </p>
         </div>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            aria-label={editingItem ? 'Update' : 'Create'}
+            title={editingItem ? 'Update' : 'Create'}
+            className="flex h-10 w-10 items-center justify-center rounded bg-blue-600 text-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faFloppyDisk} />
+          </button>
+          {editingItem && (
+            <button
+              type="button"
+              onClick={onCancel}
+              aria-label="Cancel"
+              title="Cancel"
+              className="flex h-10 w-10 items-center justify-center rounded bg-gray-600 text-lg hover:bg-gray-700"
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
+      </form>
+    )
+  }
+
+  if (activeTab === 'credentials') {
+    return (
+      <form onSubmit={onSave} className="space-y-4 text-sm">
+        {requiredHint}
+        <select
+          name="category"
+          value={formData.category || 'certification'}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
+        >
+          <option value="certification">Certification</option>
+          <option value="organization">Organization</option>
+        </select>
+        <input
+          type="text"
+          name="title"
+          placeholder="Title *"
+          value={formData.title || ''}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
+        />
+        <input
+          type="number"
+          name="sortOrder"
+          placeholder="Sort Order"
+          value={formData.sortOrder || 0}
+          onChange={handleChange}
+          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
+        />
         <div className="flex gap-2">
           <button
             type="submit"
@@ -1498,6 +1740,139 @@ function AdminEditorModal({ isOpen, title, subtitle, onClose, children }) {
   )
 }
 
+function SkillGroupRenameModal({ isOpen, loading, value, onChange, onClose, onSubmit }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-lg rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-bold text-white">Rename Skill Group</h3>
+            <p className="mt-1 text-sm text-gray-400">Update the card/group name for all skills in this group.</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            className="flex h-9 w-9 items-center justify-center rounded bg-gray-700 text-lg hover:bg-gray-600"
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="New group name *"
+            required
+            autoFocus
+            className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white"
+          />
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="submit"
+              disabled={loading}
+              aria-label="Save"
+              title={loading ? 'Saving...' : 'Save'}
+              className="flex h-10 w-10 items-center justify-center rounded bg-blue-600 text-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faFloppyDisk} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              aria-label="Cancel"
+              title="Cancel"
+              className="flex h-10 w-10 items-center justify-center rounded bg-gray-600 text-lg hover:bg-gray-700 disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function SkillsGroupTable({ skills, onRenameGroup, onDeleteGroup }) {
+  const groups = Array.from(
+    (skills || []).reduce((acc, skill) => {
+      const groupId = Number(skill.groupId)
+      const fallbackName = `Track ${String((groupId ?? 0) + 1).padStart(2, '0')}`
+      const name = String(skill.groupName || '').trim() || fallbackName
+
+      if (!acc.has(groupId)) {
+        acc.set(groupId, {
+          groupId,
+          name,
+          totalSkills: 0,
+          minSortOrder: Number.POSITIVE_INFINITY,
+        })
+      }
+
+      const group = acc.get(groupId)
+      if (group) {
+        group.totalSkills += 1
+        const sortOrder = Number(skill.sortOrder)
+        if (Number.isFinite(sortOrder)) {
+          group.minSortOrder = Math.min(group.minSortOrder, sortOrder)
+        }
+      }
+
+      return acc
+    }, new Map()).values(),
+  ).sort((a, b) => {
+    const aSort = Number.isFinite(a.minSortOrder) ? a.minSortOrder : Number.POSITIVE_INFINITY
+    const bSort = Number.isFinite(b.minSortOrder) ? b.minSortOrder : Number.POSITIVE_INFINITY
+    if (aSort !== bSort) return aSort - bSort
+    return a.name.localeCompare(b.name)
+  })
+
+  return (
+    <div className="mb-4 overflow-x-auto rounded-lg border border-gray-700">
+      <table className="min-w-full divide-y divide-gray-700 text-sm">
+        <thead className="bg-gray-800/80">
+          <tr>
+            <th className="px-4 py-3 text-left font-semibold text-gray-200">Card / Group Name</th>
+            <th className="px-4 py-3 text-left font-semibold text-gray-200">Skills Count</th>
+            <th className="px-4 py-3 text-left font-semibold text-gray-200">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-700 bg-gray-900/50">
+          {groups.map((group) => (
+            <tr key={group.groupId}>
+              <td className="px-4 py-3 text-gray-200">{group.name}</td>
+              <td className="px-4 py-3 text-gray-300">{group.totalSkills}</td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  <IconActionButton
+                    onClick={() => onRenameGroup(group)}
+                    aria-label="Rename Group"
+                    title="Rename Group"
+                    icon={faPen}
+                  />
+                  <IconActionButton
+                    onClick={() => onDeleteGroup(group)}
+                    aria-label="Delete Group"
+                    title="Delete Group"
+                    icon={faTrash}
+                    tone="danger"
+                  />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function IconActionButton({
   onClick,
   type = 'button',
@@ -1540,8 +1915,9 @@ function AdminList({ activeTab, items, onEdit, onDelete, onMarkRead, loading }) 
   const headersByTab = {
     projects: ['Name', 'Slug', 'Summary', 'Actions'],
     slides: ['Slide', 'Eyebrow', 'Title', 'Description', 'Actions'],
-    skills: ['Skill', 'Group', 'Sort', 'Actions'],
+    skills: ['Skill', 'Card Name', 'Sort', 'Actions'],
     experiences: ['Role', 'Company', 'Period', 'Actions'],
+    credentials: ['Category', 'Title', 'Sort', 'Actions'],
     social: ['Label', 'URL', 'Icon', 'Actions'],
     contact: ['Email', 'Phone', 'Location', 'Address', 'Actions'],
     messages: ['Name', 'Email', 'Message', 'Created', 'Status', 'Actions'],
@@ -1582,7 +1958,7 @@ function AdminList({ activeTab, items, onEdit, onDelete, onMarkRead, loading }) 
               {activeTab === 'skills' && (
                 <>
                   <td className="px-4 py-3 font-medium text-white">{item.skillName}</td>
-                  <td className="px-4 py-3 text-gray-300">{item.groupId}</td>
+                  <td className="px-4 py-3 text-gray-300">{item.groupName || `Track ${String((item.groupId ?? 0) + 1).padStart(2, '0')}`}</td>
                   <td className="px-4 py-3 text-gray-300">{item.sortOrder}</td>
                 </>
               )}
@@ -1592,6 +1968,14 @@ function AdminList({ activeTab, items, onEdit, onDelete, onMarkRead, loading }) 
                   <td className="px-4 py-3 font-medium text-white">{item.role}</td>
                   <td className="px-4 py-3 text-gray-300">{item.company}</td>
                   <td className="px-4 py-3 text-gray-300">{item.period}</td>
+                </>
+              )}
+
+              {activeTab === 'credentials' && (
+                <>
+                  <td className="px-4 py-3 text-gray-300 capitalize">{item.category}</td>
+                  <td className="px-4 py-3 font-medium text-white">{item.title}</td>
+                  <td className="px-4 py-3 text-gray-300">{item.sortOrder}</td>
                 </>
               )}
 

@@ -9,6 +9,7 @@ import socialLinksRouter from './routes/socialLinks.js'
 import contactRouter from './routes/contact.js'
 import aboutRouter from './routes/about.js'
 import messagesRouter from './routes/messages.js'
+import credentialsRouter from './routes/credentials.js'
 import prisma from './lib/prisma.js'
 
 const app = express()
@@ -92,6 +93,7 @@ app.use('/api/social-links', socialLinksRouter)
 app.use('/api/contact', contactRouter)
 app.use('/api/about', aboutRouter)
 app.use('/api/messages', messagesRouter)
+app.use('/api/credentials', credentialsRouter)
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.path}` })

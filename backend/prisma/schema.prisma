@@ -87,6 +87,7 @@ model Skill {
   id        Int     @id @default(autoincrement())
   skillName String  @map("skill_name") @db.VarChar(120)
   groupId   Int     @map("group_id")
+  groupName String? @map("group_name") @db.VarChar(120)
   sortOrder Int     @default(0) @map("sort_order")
 
   @@index([groupId])
@@ -191,4 +192,19 @@ model AboutItem {
 
   @@index([sectionId])
   @@map("about_items")
+}
+
+enum CredentialCategory {
+  certification
+  organization
+}
+
+model Credential {
+  id        Int                @id @default(autoincrement())
+  category  CredentialCategory @default(certification)
+  title     String             @db.VarChar(255)
+  sortOrder Int                @default(0) @map("sort_order")
+
+  @@index([category, sortOrder])
+  @@map("credentials")
 }

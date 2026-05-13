@@ -3,6 +3,25 @@ import { ConnectionLostCard, ContentLoadingCard } from '../components/ContentSta
 
 function SkillsSlide({ slide, setRef, nextArrow, skillGroups, isLoading = false, hasError = false }) {
   const animationRef = useGsapReveal()
+  const normalizedGroups = Array.isArray(skillGroups)
+    ? skillGroups
+      .map((group, index) => {
+        if (Array.isArray(group)) {
+          return {
+            groupId: index,
+            cardName: `Track ${String(index + 1).padStart(2, '0')}`,
+            skills: group,
+          }
+        }
+
+        return {
+          groupId: group?.groupId ?? index,
+          cardName: group?.cardName || `Track ${String(index + 1).padStart(2, '0')}`,
+          skills: Array.isArray(group?.skills) ? group.skills : [],
+        }
+      })
+      .slice(0, 10)
+    : []
 
   return (
     <section
@@ -35,15 +54,15 @@ function SkillsSlide({ slide, setRef, nextArrow, skillGroups, isLoading = false,
 
           {!isLoading &&
             !hasError &&
-            skillGroups.map((group, index) => (
+            normalizedGroups.map((group, index) => (
               <div
-                key={group.join('-')}
+                key={`${group.groupId}-${group.cardName}`}
                 data-gsap-stagger-item
                 className="layout-card rounded-[2rem] bg-white/[0.04] p-6 backdrop-blur-md transition hover:-translate-y-1"
               >
-                <p className="text-xs uppercase tracking-[0.35em] text-white/40">Track 0{index + 1}</p>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/40">{group.cardName || `Track ${String(index + 1).padStart(2, '0')}`}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  {group.map((skill) => (
+                  {group.skills.map((skill) => (
                     <span
                       key={skill}
                       className="layout-pill rounded-full bg-amber-300/10 px-4 py-2 text-sm text-amber-100 transition hover:scale-105"

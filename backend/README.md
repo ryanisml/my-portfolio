@@ -1,6 +1,6 @@
 # Backend API (Prisma + SQL)
 
-This service exposes all portfolio data (projects, slides, skills, experiences, social links, contact form messages) through Prisma ORM.
+This service exposes all portfolio data (projects, slides, skills, experiences, credentials, social links, about, contact, and contact form messages) through Prisma ORM.
 
 ## Tech
 
@@ -82,7 +82,8 @@ The API will run on `http://localhost:4000`.
 - `GET /api/projects`
 - `GET /api/projects/:slug`
 - `GET /api/slides`
-- `GET /api/skills`
+- `GET /api/skills` - Returns skill cards as `{ groupId, cardName, skills[] }` (max 10 cards)
+- `GET /api/credentials` - Returns `{ certifications, organizations }`
 - `GET /api/experiences`
 - `GET /api/social-links`
 - `GET /api/about`
@@ -103,26 +104,46 @@ Authorization: Bearer <ADMIN_PASSWORD>
 - `DELETE /api/messages/:id` - Delete message
 
 **Data Management:**
+- `GET /api/projects/admin/all` - List all projects
+- `POST /api/projects` - Create project
 - `PUT /api/projects/:slug` - Update project
 - `DELETE /api/projects/:slug` - Delete project
+- `POST /api/slides` - Create slide
 - `PUT /api/slides/:id` - Update slide
-- `PUT /api/skills/:id` - Update skill group
+- `DELETE /api/slides/:id` - Delete slide
+- `GET /api/skills/admin/all` - List all skills (raw rows)
+- `POST /api/skills` - Create skill (supports `groupName` for dynamic card title)
+- `PUT /api/skills/:id` - Update skill/group (supports `groupName`)
+- `DELETE /api/skills/:id` - Delete skill
+- `PUT /api/skills/admin/groups/:groupId` - Rename a skill group/card name
+- `DELETE /api/skills/admin/groups/:groupId` - Delete a skill group and all skills in that group
+- `GET /api/experiences/admin/all` - List all work experiences
+- `POST /api/experiences` - Create work experience
 - `PUT /api/experiences/:id` - Update work experience
+- `DELETE /api/experiences/:id` - Delete work experience
+- `GET /api/credentials/admin/all` - List all credentials
+- `POST /api/credentials` - Create credential (`certification` or `organization`)
+- `PUT /api/credentials/:id` - Update credential
+- `DELETE /api/credentials/:id` - Delete credential
+- `POST /api/social-links` - Create social link
 - `PUT /api/social-links/:id` - Update social link
+- `DELETE /api/social-links/:id` - Delete social link
+- `GET /api/about/admin/all` - List all about records
+- `POST /api/about` - Create about record
 - `PUT /api/about/:id` - Update about section
+- `DELETE /api/about/:id` - Delete about record
 - `PUT /api/contact` - Update contact info
 
 ## Database Schema
 
 - **projects**: Portfolio project entries with full details, images, responsibilities, impacts, technologies
 - **slides**: Presentation slide metadata (title, description, theme colors)
-- **skills**: Skill groups organized by category
-- **work_experiences**: Career history with highlights and sub-highlights
-- **work_experience_sub_highlights**: Detailed highlights within work experiences
+- **skills**: Skills grouped by `group_id` with optional `group_name` (dynamic card title)
+- **work_experiences**: Career history with nested highlights
 - **social_links**: Social media profile links with icon mappings
+- **credentials**: Certification and organization entries (`CredentialCategory` enum)
 - **contact**: Contact information (email, phone, address, location, coordinates)
-- **about**: About section with nested items
-- **about_items**: Individual items within about sections
+- **about / about_sections / about_items**: About section content with nested structure
 - **messages**: Contact form submissions with reCAPTCHA verification
 
 ## Environment Variables
@@ -135,6 +156,14 @@ Required:
 Optional:
 - `ADMIN_PASSWORD` - Bearer token for admin endpoints (default: required for admin operations)
 - `RECAPTCHA_SECRET_KEY` - reCAPTCHA v2 secret key (from Google Cloud Console)
+
+## Skills Rules
+
+- Skill cards are dynamic and can be named with `groupName` (stored as `group_name`).
+- The API enforces a maximum of 10 distinct skill cards/groups.
+- Admin can rename a group/card name via `PUT /api/skills/admin/groups/:groupId`.
+- Admin can delete a group and clear all skills inside it via `DELETE /api/skills/admin/groups/:groupId`.
+- Seed data defines initial card names in [backend/prisma/seed.js](backend/prisma/seed.js).
 
 ### Image Storage Options
 

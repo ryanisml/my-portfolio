@@ -1,6 +1,6 @@
 // Basic admin authentication middleware
 // Docker Compose env_file may preserve wrapping quotes; normalize once at startup.
-const rawAdminPassword = process.env.ADMIN_PASSWORD || 'admin123'
+const rawAdminPassword = process.env.ADMIN_PASSWORD
 const ADMIN_PASSWORD = rawAdminPassword.replace(/^['\"](.*)['\"]$/, '$1')
 
 export function adminAuth(req, res, next) {

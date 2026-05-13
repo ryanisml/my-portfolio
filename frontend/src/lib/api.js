@@ -84,3 +84,7 @@ export function getSocialLinks() {
 export function getContact() {
   return fetchJson('/api/contact')
 }
+
+export function getCredentials() {
+  return fetchJson('/api/credentials')
+}

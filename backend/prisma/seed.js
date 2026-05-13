@@ -90,6 +90,7 @@ async function resetAndSeed() {
   await prisma.projectImage.deleteMany()
   await prisma.project.deleteMany()
   await prisma.contact.deleteMany()
+  await prisma.credential.deleteMany()
   await prisma.aboutItem.deleteMany()
   await prisma.aboutSection.deleteMany()
   await prisma.about.deleteMany()
@@ -151,6 +152,17 @@ async function resetAndSeed() {
       sortOrder: 4,
     },
     {
+      slideId: 'credentials',
+      eyebrow: 'Certification & Organization',
+      title: 'I stay active through certifications and community involvement.',
+      description:
+        'This section highlights the certifications I pursue and the organizations where I contribute and keep growing.',
+      accent: 'Credentials and community',
+      sectionClassDark: 'bg-teal-950',
+      sectionClassLight: 'bg-teal-100',
+      sortOrder: 5,
+    },
+    {
       slideId: 'contact',
       eyebrow: 'Contact',
       title: 'I love to connect and collaborate, so let’s get in touch!',
@@ -159,7 +171,7 @@ async function resetAndSeed() {
       accent: 'Contact details',
       sectionClassDark: 'bg-amber-950',
       sectionClassLight: 'bg-orange-100',
-      sortOrder: 5,
+      sortOrder: 6,
     },
     {
       slideId: 'social',
@@ -169,7 +181,7 @@ async function resetAndSeed() {
       accent: 'Social links',
       sectionClassDark: 'bg-stone-950',
       sectionClassLight: 'bg-stone-100',
-      sortOrder: 6,
+      sortOrder: 7,
     },
   ]
 
@@ -179,17 +191,27 @@ async function resetAndSeed() {
 
   // Seed skills
   const skillGroups = [
-    ['React', 'Vite', 'TypeScript', 'Tailwind CSS'],
-    ['Node.js', 'Express', 'Prisma', 'PostgreSQL'],
-    ['GSAP', 'Figma', 'REST APIs', 'Docker'],
+    {
+      cardName: 'Frontend Core',
+      skills: ['React', 'Vite', 'TypeScript', 'Tailwind CSS'],
+    },
+    {
+      cardName: 'Backend & Data',
+      skills: ['Node.js', 'Express', 'Prisma', 'PostgreSQL'],
+    },
+    {
+      cardName: 'Tooling & Workflow',
+      skills: ['GSAP', 'Figma', 'REST APIs', 'Docker'],
+    },
   ]
 
-  for (const [groupId, skills] of skillGroups.entries()) {
-    for (const [sortOrder, skillName] of skills.entries()) {
+  for (const [groupId, group] of skillGroups.entries()) {
+    for (const [sortOrder, skillName] of group.skills.entries()) {
       await prisma.skill.create({
         data: {
           skillName,
           groupId,
+          groupName: group.cardName,
           sortOrder,
         },
       })
@@ -292,6 +314,20 @@ async function resetAndSeed() {
         })
       }
     }
+  }
+
+  // Seed credentials (Certification & Organization slide)
+  const credentials = [
+    { category: 'certification', title: 'Google Data Analytics Professional Certificate', sortOrder: 0 },
+    { category: 'certification', title: 'Meta Front-End Developer Certificate', sortOrder: 1 },
+    { category: 'certification', title: 'AWS Cloud Practitioner (In Progress)', sortOrder: 2 },
+    { category: 'organization', title: 'Core Member, Google Developer Student Clubs', sortOrder: 0 },
+    { category: 'organization', title: 'Volunteer Mentor, Campus Web Development Community', sortOrder: 1 },
+    { category: 'organization', title: 'Member, Indonesia Frontend Developer Circle', sortOrder: 2 },
+  ]
+
+  for (const item of credentials) {
+    await prisma.credential.create({ data: item })
   }
 
   // Seed social links
