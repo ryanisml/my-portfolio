@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFloppyDisk, faPen, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useNavigate } from 'react-router-dom'
+import { getApiBaseUrl, getRecaptchaSiteKey } from '../lib/runtimeConfig'
 
 const ADMIN_SESSION_KEY = 'portfolio_admin_session'
 const ADMIN_SESSION_DURATION_MS = 10 * 60 * 1000 * 24
@@ -123,8 +124,8 @@ export default function AdminPanel() {
   const [formData, setFormData] = useState({})
   const [isEditorOpen, setIsEditorOpen] = useState(false)
 
-  const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-  const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+  const API_URL = getApiBaseUrl()
+  const RECAPTCHA_SITE_KEY = getRecaptchaSiteKey()
   const captchaConfigured = !!RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here'
 
   const activeTabConfig = TAB_CONFIG[activeTab]

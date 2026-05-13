@@ -236,6 +236,9 @@ portfolio/
 VITE_API_BASE_URL="http://localhost:4000"
 VITE_RECAPTCHA_SITE_KEY="your_recaptcha_site_key_here"
 VITE_ALLOWED_HOSTS="localhost"
+VITE_HMR_HOST=""
+VITE_HMR_PROTOCOL="ws"
+VITE_HMR_CLIENT_PORT="5173"
 ```
 
 **Backend (.env):**
@@ -246,6 +249,19 @@ CORS_ORIGIN="http://localhost:5173"
 RECAPTCHA_SECRET_KEY="your_recaptcha_secret_key_here"
 ADMIN_PASSWORD=admin123
 ```
+
+**Portainer (.env.portainer):**
+```
+PORTFOLIO_TAG=v1
+DATABASE_URL=postgresql://user:password@host:5432/portfolio_db
+ADMIN_PASSWORD=change_this_admin_password
+CORS_ORIGIN=https://your-frontend-domain
+RECAPTCHA_SECRET_KEY=
+VITE_API_BASE_URL=https://your-frontend-domain
+VITE_RECAPTCHA_SITE_KEY=
+```
+
+Copy the template from [.env.portainer.example](.env.portainer.example).
 
 ## Development
 
@@ -267,7 +283,8 @@ cd frontend && npm run build
 
 ## Deployment
 
-Using Docker Compose:
+### Local Docker Compose
+
 ```bash
 docker compose up --build -d
 ```
@@ -277,4 +294,55 @@ This starts:
 - Frontend (port 5173)
 
 And connects backend to your external PostgreSQL instance via `DATABASE_URL`.
+
+### Portainer + Registry (Production)
+
+1. Build and push images to your registry:
+
+```bash
+TAG=v2
+
+docker buildx build --platform linux/amd64 -t registry.ismail.id/my-portfolio-backend:${TAG} ./backend --push
+docker buildx build --platform linux/amd64 -t registry.ismail.id/my-portfolio-frontend:${TAG} ./frontend --push
+```
+
+2. In Portainer Stack env, set variables from `.env.portainer` and set `PORTFOLIO_TAG` to your pushed tag.
+
+3. Deploy [docker-compose.portainer.yml](docker-compose.portainer.yml).
+
+4. Configure nginx for your domain:
+   - proxy `/` to `127.0.0.1:5173` (frontend container)
+   - proxy `/api/` and `/health` to `127.0.0.1:4000` (backend container)
+
+Example nginx locations:
+
+```nginx
+location /api/ {
+   proxy_pass http://127.0.0.1:4000/api/;
+   proxy_http_version 1.1;
+   proxy_set_header Host $host;
+   proxy_set_header X-Real-IP $remote_addr;
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location = /health {
+   proxy_pass http://127.0.0.1:4000/health;
+   proxy_http_version 1.1;
+   proxy_set_header Host $host;
+}
+
+location / {
+   proxy_pass http://127.0.0.1:5173;
+   proxy_http_version 1.1;
+   proxy_set_header Host $host;
+   proxy_set_header X-Real-IP $remote_addr;
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Notes:
+- Frontend in production is static files served by Nginx in the container.
+- Frontend runtime config is generated at container start in `/config.js`, so `VITE_API_BASE_URL` and `VITE_RECAPTCHA_SITE_KEY` can be changed in Portainer without rebuilding the image.
 

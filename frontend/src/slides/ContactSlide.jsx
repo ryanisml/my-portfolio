@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import useGsapReveal from '../hooks/useGsapReveal'
 import { getContact } from '../lib/api'
+import { getApiBaseUrl, getRecaptchaSiteKey } from '../lib/runtimeConfig'
 import { ConnectionLostCard, ContentLoadingCard, ShimmerLine } from '../components/ContentStates'
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+const API_URL = getApiBaseUrl()
+const RECAPTCHA_SITE_KEY = getRecaptchaSiteKey()
 const captchaReady = !!RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here'
 
 function ContactSlide({ slide, setRef }) {

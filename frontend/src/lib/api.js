@@ -9,8 +9,9 @@ import {
   faYoutube,
 } from '@fortawesome/free-brands-svg-icons'
 import { faGlobe } from '@fortawesome/free-solid-svg-icons'
+import { getApiBaseUrl } from './runtimeConfig'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+const baseUrl = getApiBaseUrl()
 
 const socialIconMap = {
   faInstagram,
