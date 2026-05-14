@@ -29,6 +29,10 @@ A full-stack React + Vite portfolio with a Prisma-powered backend, reCAPTCHA pro
 - ♿ Responsive design
 - 🤖 reCAPTCHA protection on login and contact form
 
+## Screenshots
+![Home Page](https://res.cloudinary.com/dcg5xybwr/image/upload/f_auto,q_auto/Screenshot_2026-05-13_at_16.06.28_etxp8i)
+![Admin Panel](https://res.cloudinary.com/dcg5xybwr/image/upload/f_auto,q_auto/Screenshot_2026-05-14_at_07.47.46_oktx8h)
+
 ## Quick Start
 
 ### Option 1: Manual Setup (Recommended)
